@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        <div class="center">
+        <h1>WELCOME TO TheMangaHub!!!</h1>
+   <button id="toggleButton">KNOW MORE</button>
+<p id="toggleText" style="display: none;"><b>Welcome to TheMangaHub—Your Ultimate Free Destination for Everything Manga!</b><br><br>Dive into a comprehensive and diverse library featuring a wide range of genres, from action-packed shonen and heartfelt shojo to deep seinen narratives and captivating slice-of-life stories. Our platform is dedicated to providing manga enthusiasts with high-quality, easily accessible content completely free of charge. Whether you are a lifelong fan or just beginning your journey, we are thrilled to welcome you to our growing community. Explore MangaVerse today, immerse yourself in incredible artwork, and find your next favorite story instantly!</p>
+</div>
+    <hr>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: center; text-align: center;">   
+       <img width="400px" class="leftmove" src="g.png" alt="GOJO">
+      <div class="outlined-image">
+       <a href="https://share.google/yK7JLkteUcQwPK2Fo"><img width="500px" src="https://www.pngall.com/wp-content/uploads/15/Jujutsu-Kaisen-Logo-PNG-Clipart.png" alt="JJK"></a>
+       <p class="center"><b><u>CLICK TO OPEN JJK MANGA</u></b></p>
+       </div>
+       <img src="s.png" class="rightmove" alt="SUKUNA"> 
+    </div>
+   <br>   
+<div class="jjkbtn">
+    <button id="jjkbutton">JJK SUMMARY</button>
+<p id="jjkText" style="display: none;">In a world where cursed spirits feed on unsuspecting humans, fragments of the legendary and feared demon Ryomen Sukuna have been lost and scattered about. Should any demon consume Sukuna's body parts, the power they gain could destroy the world as we know it. Fortunately, there exists a mysterious school of Jujutsu Sorcerers who exist to protect the precarious existence of the living from the supernatural!</p>
+   </div>
+   <br>
+   <hr>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: center; text-align: center;">
+       <img class="leftmove" width="400px" src="tanjiro.png" alt="TANJIRO">
+        <div class="outlined-image">
+<a href="https://demonslayermangaa.com/category/chapters/"><img width="500px" src="ds.png" alt="DEMON SLAYER"></a>
+<p class="center"><b><u>CLICK TO OPEN DEMON SLAYER MANGA</u></b></p>
+        </div>
+<img class="rightmove" width="340px" src="nezuko.png" alt="NEZUKO">
+</div>
+<div class="center">
+    <button id="dsbutton">DS SUMMARY</button>
+<p id="dsText" style="display: none;">In Taisho-era Japan, kindhearted Tanjiro Kamado makes a living selling charcoal. But his peaceful life is shattered when a demon slaughters his entire family. His little sister Nezuko is the only survivor, but she has been transformed into a demon herself! Tanjiro sets out on a dangerous journey to find a way to return his sister to normal and destroy the demon who ruined his life.</p>
+   </div>
+  <br>
+ <hr>
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: center; text-align: center;">
+       <img width="400px" class="leftmove" src="naru.jpeg" alt="NARUTO">
+        <div class="outlined-image">
+<a href="https://www.viz.com/shonenjump/chapters/naruto"><img width="300px" src="naruto.jpeg" alt="DEMON SLAYER"></a>
+<p class="center"><b><u>CLICK TO OPEN NARUTO MANGA</u></b></p>        
+</div>
+<img width="300px" class="rightmove" src="sasu.jpeg" alt="SASUKE">
+</div>
+<div class="nbtn">
+    <button id="nbutton">NARUTO SUMMARY</button>
+<p id="nText" style="display: none;">Step into a sprawling world governed by shinobi clans, hidden villages, and ancient mystical energies. Naruto follows a fiercely determined orphan who is exiled by his own society because a catastrophic, world-ending beast is sealed inside him. Driven by an unyielding resolve to earn his village’s respect, he trains to become the ultimate leader in an legendary epic renowned for its deep lore, complex emotional rivalries, and some of the most strategic battle systems in anime history</p>
+   </div>
+   <br>
+   <br>
+   <br>
+   <hr>
+    <style>
+        .rightmove {
+  /* Connect the animation: name, duration (1 second), smooth deceleration, stay in place at the end */
+  animation: rightanimation 1s ease-out forwards;
+}
+
+@keyframes rightanimation {
+  0% {
+    /* Start completely off-screen to the right and invisible */
+    transform: translateX(100vw);
+    opacity: 0;
+  }
+  100% {
+    /* Stop exactly in its original position and fully visible */
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.leftmove {
+  /* Connect the animation: name, duration (1 second), smooth deceleration, stay in place at the end */
+  animation: leftanimation 1s ease-out forwards;
+}
+
+@keyframes leftanimation {
+  0% {
+    /* Start completely off-screen to the left and invisible */
+    transform: translateX(-100vw);
+    opacity: 0;
+  }
+  100% {
+    /* Stop exactly in its original position and fully visible */
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+
+         .outlined-image {
+      /* Adjust the 5px to make the outline thinner or thicker */
+      outline: 1px solid black;
+      
+      /* This forces the outline to sit perfectly inside the image boundary */
+      outline-offset: -1px; 
+      
+      /* Optional: ensures your image behaves nicely in layouts */
+      display: block; 
+      max-width: 100%;
+      height: auto;
+    }
+        .center {
+        text-align: center;}
+    </style>
+<script>
+  const toggleBtn = document.getElementById('toggleButton');
+  const toggleTxt = document.getElementById('toggleText');
+
+  toggleBtn.addEventListener('click', function() {
+    if (toggleTxt.style.display === 'none') {
+      toggleTxt.style.display = 'block'; // Shows the text
+    } else {
+      toggleTxt.style.display = 'none';  // Hides the text
+    }
+  });
+</script>
+<script>
+  const jjkbutton = document.getElementById('jjkbutton');
+  const jjkTxt = document.getElementById('jjkText');
+
+  jjkbutton.addEventListener('click', function() {
+    if (jjkTxt.style.display === 'none') {
+      jjkTxt.style.display = 'block'; // Shows the text
+    } else {
+      jjkTxt.style.display = 'none';  // Hides the text
+    }
+  });
+</script>
+<script>
+  const dsbutton = document.getElementById('dsbutton');
+  const dsTxt = document.getElementById('dsText');
+
+  dsbutton.addEventListener('click', function() {
+    if (dsTxt.style.display === 'none') {
+      dsTxt.style.display = 'block'; // Shows the text
+    } else {
+      dsTxt.style.display = 'none';  // Hides the text
+    }
+  });
+</script>
+<script>
+  const nbutton = document.getElementById('nbutton');
+  const nTxt = document.getElementById('nText');
+
+  nbutton.addEventListener('click', function() {
+    if (nTxt.style.display === 'none') {
+      nTxt.style.display = 'block'; // Shows the text
+    } else {
+      nTxt.style.display = 'none';  // Hides the text
+    }
+  });
+</script>
+<style>
+  .jjkbtn{
+    margin-top: -100px;
+    text-align: center;
+  }
+  .nbtn{
+    margin-top: -40px;
+    text-align: center;
+  }
+</style>
+    </body>
+</html>
