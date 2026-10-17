@@ -252,18 +252,24 @@ border-right:4px solid #A51C30;">
 
 
 
-html {
-  width: 1024px;
+html, body {
   margin: 0;
   padding: 0;
+  background: #000;
 }
 
 body {
-  width: 1024px;
-  min-width: 1024px;
-  margin: 0;
-  padding: 0;
+  width: 100%;
   overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 
