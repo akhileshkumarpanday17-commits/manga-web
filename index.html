@@ -21,9 +21,47 @@ background-color:#050505;
       } 
     } 
   </style>
+
+
+
+
+
+
+<script>
+const hamburgerBtn = document.getElementById('hamburgerBtn');
+const sidePanel = document.getElementById('sidePanel');
+const closeBtn = document.getElementById('closeBtn');
+const overlay = document.getElementById('overlay');
+
+hamburgerBtn.onclick = () => {
+  sidePanel.classList.add('open');
+  overlay.classList.add('show');
+}
+closeBtn.onclick = overlay.onclick = () => {
+  sidePanel.classList.remove('open');
+  overlay.classList.remove('show');
+}
+</script>
+
+
+
+
+
+
 </head>
     <body>
-<button class="hamdimen" ><b>☰</b></button>
+
+
+
+<button class="hamdimen hamburgerBtn" ><b>☰</b></button>
+<div id="sidePanel" class="side-panel">
+  <button id="closeBtn">✕</button>
+  <a href="#">Games</a>
+</div>
+<div id="overlay" class="overlay"></div>
+
+
+
 <div class="center white">
         <h1>WELCOME TO Tenjiku!!!</h1>
 
@@ -281,6 +319,31 @@ img {
         margin-left: 30px;
         margin-top: 30px;
     }
+
+
+
+
+
+
+
+#hamburgerBtn { position: fixed; top: 15px; left: 15px; z-index: 1001; font-size: 28px; cursor: pointer; }
+
+.side-panel {
+  position: fixed; top: 0; left: -300px;
+  width: 280px; height: 100%; background: #181818;
+  z-index: 1002; transition: 0.3s; padding: 20px;
+}
+.side-panel.open { left: 0; }
+
+.overlay {
+  display: none; position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%; background: rgba(0,0,0,0.6);
+  z-index: 1000;
+}
+.overlay.show { display: block; }
+
+
+
 
 
 </style>
