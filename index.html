@@ -32,7 +32,7 @@ background-color:#050505;
 <div id="sidePanel" class="side-panel">
   <button id="closeBtn">✕</button>
 <br>
-  <a href="#"><button>Games</button></a>
+  <a href="#"><button class="hambtn" >Games</button></a>
 </div>
 <div id="overlay" class="overlay"></div>
 
@@ -303,6 +303,23 @@ img {
     }
 
 
+.hambtn{
+        height: 100px;
+        width: 50px;
+        border-radius: 10px;
+        margin-left: 30px;
+        margin-top: 30px;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        box-sizing: border-box;
+        line-height: 1;
+        background-color:black;
+        color:white;
+    }
+
+
 
 
 
@@ -311,8 +328,8 @@ img {
 #hamburgerBtn { position: fixed; top: 15px; left: 15px; z-index: 1001; font-size: 28px; cursor: pointer; }
 
 .side-panel {
-  position: fixed; top: 0; left: -300px;
-  width: 280px; height: 100%; background: #181818;
+  position: fixed; top: 0; left: -350px;
+  width: 330px; height: 100%; background: #181818;
   z-index: 1002; transition: 0.3s; padding: 20px;
 }
 .side-panel.open { left: 0; }
