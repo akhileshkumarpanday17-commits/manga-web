@@ -23,31 +23,6 @@ background-color:#050505;
   </style>
 
 
-
-
-
-
-<script>
-const hamburgerBtn = document.getElementById('hamburgerBtn');
-const sidePanel = document.getElementById('sidePanel');
-const closeBtn = document.getElementById('closeBtn');
-const overlay = document.getElementById('overlay');
-
-hamburgerBtn.onclick = () => {
-  sidePanel.classList.add('open');
-  overlay.classList.add('show');
-}
-closeBtn.onclick = overlay.onclick = () => {
-  sidePanel.classList.remove('open');
-  overlay.classList.remove('show');
-}
-</script>
-
-
-
-
-
-
 </head>
     <body>
 
@@ -347,5 +322,32 @@ img {
 
 
 </style>
-    </body>
+    
+
+
+
+
+<script>
+const hamburgerBtn = document.getElementById('hamburgerBtn');
+const sidePanel = document.getElementById('sidePanel');
+const closeBtn = document.getElementById('closeBtn');
+const overlay = document.getElementById('overlay');
+
+hamburgerBtn.onclick = () => {
+  sidePanel.classList.add('open');
+  overlay.classList.add('show');
+}
+closeBtn.onclick = overlay.onclick = () => {
+  sidePanel.classList.remove('open');
+  overlay.classList.remove('show');
+}
+</script>
+
+
+
+
+
+
+
+</body>
 </html>
