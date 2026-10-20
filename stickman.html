@@ -1,82 +1,179 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stick Fighter</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Stick Fighter - Ragdoll Pro</title>
 <style>
-body{margin:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;color:white;font-family:sans-serif;touch-action:none}
-canvas{background:#222;border:2px solid #444;border-radius:12px}
-#controls{display:flex;gap:10px;margin-top:12px}
-button{padding:14px 22px;font-size:18px;border-radius:10px;border:none;background:#fff;color:#000;font-weight:bold;user-select:none}
-#hp{width:340px;height:14px;background:#333;border-radius:6px;margin-bottom:8px;display:flex}
-#hp div{height:100%;transition:width 0.2s}
-#hp1{background:#4f4;width:50%}
-#hp2{background:#f44;width:50%}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+body{margin:0;background:radial-gradient(#232323,#080808);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;color:#fff;font-family:system-ui;font-weight:800;overflow:hidden;touch-action:none}
+.top{width:360px;display:flex;justify-content:space-between;font-size:12px;letter-spacing:2px;opacity:.7}
+#hpWrap{width:360px;height:18px;background:#1a1a1a;border-radius:20px;margin:6px 0 8px;display:flex;overflow:hidden;border:1px solid #333;position:relative}
+#hpWrap::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;background:#000;z-index:2}
+#hp1,#hp2{height:100%;transition:width .12s}
+#hp1{background:linear-gradient(90deg,#5cff9a,#00ff5e)}
+#hp2{background:linear-gradient(90deg,#ff5c5c,#ff0000)}
+canvas{background:linear-gradient(180deg,#2c2c2c 0%,#1e1e1e 75%,#161616 75%,#0f0f0f 100%);border:2px solid #2a2a2a;border-radius:18px;box-shadow:0 20px 60px #000}
+#controls{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:8px;margin-top:12px;width:360px}
+.b{padding:14px 4px;border-radius:14px;border:none;font-weight:900;font-size:12px;box-shadow:0 5px 0 #999}
+.b:active{transform:translateY(4px);box-shadow:0 1px 0 #999}
+.b.punch{background:#fff}
+.b.kick{background:#22f1ff;box-shadow:0 5px 0 #0e8a96}
+.b.block{background:#ffdb22;box-shadow:0 5px 0 #9a8320}
+.b.up{background:#ff3bff;box-shadow:0 5px 0 #7a1a7a;color:#fff}
+.b.move{background:#3a3a3a;color:#fff;box-shadow:0 5px 0 #000}
+#restart{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.88);backdrop-filter:blur(10px);z-index:20;flex-direction:column;gap:14px}
+#restart h1{font-size:38px;margin:0}
+#restart button{padding:14px 32px;border-radius:12px;border:none;font-weight:900;font-size:18px}
 </style>
 </head>
 <body>
-<div style="display:flex;justify-content:space-between;width:340px"><span>YOU</span><span>ENEMY</span></div>
-<div id="hp"><div id="hp1"></div><div id="hp2"></div></div>
-<canvas id="c" width="340" height="400"></canvas>
+<div class="top"><span>YOU</span><span>CPU - MASTER</span></div>
+<div id="hpWrap"><div id="hp1" style="width:100%"></div><div id="hp2" style="width:100%"></div></div>
+<canvas id="c" width="360" height="440"></canvas>
 <div id="controls">
-<button id="L">◀</button>
-<button id="A">PUNCH</button>
-<button id="K">KICK</button>
-<button id="R">▶</button>
+<button class="b move" id="L">◀</button>
+<button class="b punch" id="P">PUNCH</button>
+<button class="b up" id="U">UPPER</button>
+<button class="b kick" id="K">KICK</button>
+<button class="b move" id="R">▶</button>
+<button class="b block" id="B" style="grid-column:2/5">BLOCK / DASH (hold)</button>
 </div>
+<div id="restart"><h1 id="rt">YOU WIN</h1><button onclick="reset()">RESTART</button></div>
+
 <script>
 const ctx=document.getElementById('c').getContext('2d');
-let x=80, ex=240, hp=100, ehp=100, punch=0, kick=0, ehit=0;
-let keys={};
+let x=80,y=310, ex=280, ey=310, vx=0, evx=0, hp=100, ehp=100;
+let pT=0,kT=0,uT=0,bT=0, epT=0, ekT=0, euT=0, ebT=0, dash=0, edash=0;
+let particles=[], shake=0, gameOver=false, anim=0;
 
-function stick(px,py,facing,state,col){
- ctx.strokeStyle=col;ctx.lineWidth=3;ctx.lineCap='round';
- ctx.beginPath();ctx.arc(px,py-30,12,0,Math.PI*2);ctx.stroke();
- ctx.beginPath();ctx.moveTo(px,py-18);ctx.lineTo(px,py+10);ctx.stroke();
- ctx.beginPath();ctx.moveTo(px,py-10);ctx.lineTo(px+(state.p?20:10)*facing,py-5);ctx.stroke();
- ctx.beginPath();ctx.moveTo(px,py-10);ctx.lineTo(px+(state.p?15:-10)*facing,py);ctx.stroke();
- ctx.beginPath();ctx.moveTo(px,py+10);ctx.lineTo(px-8+(state.k?20*facing:0),py+30);ctx.stroke();
- ctx.beginPath();ctx.moveTo(px,py+10);ctx.lineTo(px+8,py+30);ctx.stroke();
+// ragdoll stick - detailed bones
+function drawFighter(px,py,facing, st, col, isKO){
+ ctx.save(); ctx.translate(px,py);
+ if(isKO) ctx.rotate(facing*1.2);
+ // shadow
+ ctx.fillStyle='rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(0,38,22,6,0,0,Math.PI*2); ctx.fill();
+
+ // skeleton params with animation
+ let t = st.p||st.k||st.u ? (st.t||0) : 0;
+ let armSwing = 0, legSwing=0;
+ if(st.p) armSwing = Math.sin(t*0.6)* -28*facing;
+ if(st.k) legSwing = Math.sin(t*0.5)* 24*facing;
+ if(st.u) armSwing = -45*facing + Math.sin(t*0.7)*10;
+
+ let blockY = st.b ? -14 : 0;
+
+ ctx.strokeStyle=col; ctx.lineWidth=4; ctx.lineCap='round'; ctx.lineJoin='round';
+
+ // hips to feet
+ // back leg
+ ctx.beginPath(); ctx.moveTo(0,8);
+ ctx.lineTo((st.k?-18: -6)+legSwing*0.3, 22);
+ ctx.lineTo((st.k? -22: -8)+legSwing, 38); ctx.stroke();
+ // front leg
+ ctx.beginPath(); ctx.moveTo(0,8);
+ ctx.lineTo(8,22); ctx.lineTo(10,38); ctx.stroke();
+
+ // spine
+ ctx.beginPath(); ctx.moveTo(0,8); ctx.lineTo(0,-16 + blockY*0.3); ctx.stroke();
+
+ // arms
+ // blocking guard
+ if(st.b){
+   ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(-10*facing, -8+blockY); ctx.lineTo(-2*facing, 2+blockY); ctx.stroke();
+   ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(10*facing, -8+blockY); ctx.lineTo(2*facing, 2+blockY); ctx.stroke();
+ } else {
+   // punching arm
+   ctx.beginPath(); ctx.moveTo(0,-12);
+   ctx.lineTo((st.p||st.u? 24:12)*facing + armSwing*0.2, (st.u? -18: -6)+blockY); 
+   ctx.lineTo((st.p||st.u? 34:16)*facing + armSwing, (st.u? -22: -4)); ctx.stroke();
+   // guard arm
+   ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(-8*facing, 0); ctx.lineTo(-4*facing, 6); ctx.stroke();
+ }
+
+ // head - detailed
+ ctx.save();
+ ctx.translate(0,-26 + blockY*0.2 + (st.hit? (Math.random()-0.5)*4:0));
+ if(st.hit) ctx.rotate((Math.random()-0.5)*0.6);
+ ctx.strokeStyle=col; ctx.lineWidth=3.8;
+ ctx.beginPath(); ctx.arc(0,0,13,0,Math.PI*2); ctx.stroke();
+ // eyes when hit
+ if(st.hit){ ctx.fillStyle=col; ctx.beginPath(); ctx.arc(-4,2,1.5,0,Math.PI*2); ctx.arc(4,2,1.5,0,Math.PI*2); ctx.fill(); }
+ ctx.restore();
+ ctx.restore();
+}
+
+function spawn(px,py,col,n=10,power=1){
+ for(let i=0;i<n;i++) particles.push({x:px,y:py,vx:(Math.random()-0.5)*12*power,vy:(Math.random()-1)*9*power,life:1,dec:0.03+Math.random()*0.05,col});
 }
 
 function loop(){
- ctx.clearRect(0,0,340,400);
- ctx.fillStyle='#2a2a2a';ctx.fillRect(0,330,340,70);
+ if(gameOver) return;
+ anim++; ctx.clearRect(0,0,360,460);
 
- if(keys['l']||keys['ArrowLeft']) x-=4;
- if(keys['r']||keys['ArrowRight']) x+=4;
- x=Math.max(30,Math.min(310,x));
-
- if(Math.random()<0.02) ex+= (Math.random()<0.5?-15:15);
- ex=Math.max(30,Math.min(310,ex));
-
- if(Math.abs(x-ex)<55){
-   if(Math.random()<0.07) ehit=12;
-   if(punch>0) ehp-=0.9;
-   if(kick>0) ehp-=1.3;
+ // move physics
+ if(!bT){
+   if(keys.l) vx-=1; if(keys.r) vx+=1;
+   if(keys.b) { dash = (keys.l?-1:keys.r?1:0)*10; vx+=dash; }
  }
- if(ehit>0 && Math.abs(x-ex)<55) hp-=0.6;
+ vx*=0.84; x+=vx; x=Math.max(30,Math.min(330,x));
+ // enemy AI - attacks!
+ let dist = x-ex;
+ let wantClose = Math.abs(dist)>50;
+ if(wantClose) evx += dist>0?0.35:-0.35;
+ else {
+   // decide attack
+   if(Math.random()<0.04 && epT==0 && !ebT){ epT=12; evx+= dist>0?-4:4 }
+   if(Math.random()<0.03 && ekT==0){ ekT=18 }
+   if(Math.random()<0.025 && euT==0){ euT=20 }
+   if(Math.random()<0.03) ebT=10;
+   if(Math.random()<0.05) edash=(dist>0?-8:8);
+ }
+ evx+=edash; edash*=0.8; evx*=0.86; ex+=evx; ex=Math.max(30,Math.min(330,ex));
+ edash=0;
 
- stick(x,300, ex>x?1:-1, {p:punch>0,k:kick>0}, '#fff');
- stick(ex,300, x>ex?1:-1, {p:ehit>0,k:false}, '#ff5555');
+ // hit detection with blocking
+ let d=Math.abs(x-ex);
+ let facingX = x<ex?1:-1;
+ let canHit = d<68;
+ let pHit = (pT==6||kT==8||uT==8) && canHit && !ebT;
+ let eHit = (epT==6||ekT==8||euT==8) && canHit && !bT;
 
- if(punch>0) punch--; if(kick>0) kick--; if(ehit>0) ehit--;
+ if(pHit){ let dmg = pT?7: kT?11: 16; if(euT) dmg*=1.5; ehp-=dmg; shake= d>0?10:10; spawn(ex,290,dmg>12?'#22f1ff':'#fff',14,1.2); evx+=facingX*6; }
+ if(eHit){ let dmg = epT?7: ekT?11:15; if(bT) dmg*=0.25; hp-=dmg; shake=8; spawn(x,290,'#ff4444',12,1); vx+=-facingX*6; }
+
+ // update timers
+ [ [()=>pT, v=>pT=v], [()=>kT,v=>kT=v], [()=>uT,v=>uT=v] ].forEach(([g,s])=>{if(g()>0)s(g()-1)});
+ [ [()=>epT,v=>epT=v], [()=>ekT,v=>ekT=v], [()=>euT,v=>euT=v] ].forEach(([g,s])=>{if(g()>0)s(g()-1)});
+ if(bT>0) bT--; if(ebT>0) ebT--;
+
+ drawFighter(x,310, ex>x?1:-1, {p:pT>0,k:kT>0,u:uT>0,b:bT>0,t:pT||kT||uT, hit:eHit}, '#fff', hp<=0);
+ drawFighter(ex,310, x>ex?1:-1, {p:epT>0,k:ekT>0,u:euT>0,b:ebT>0,t:epT||ekT||euT, hit:pHit}, '#ff4d4d', ehp<=0);
+
+ // particles
+ particles=particles.filter(p=>p.life>0);
+ particles.forEach(p=>{p.x+=p.vx; p.vy+=0.4; p.y+=p.vy; p.life-=p.dec; ctx.globalAlpha=p.life; ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.x,p.y,2.5,0,Math.PI*2); ctx.fill();}); ctx.globalAlpha=1;
+
  document.getElementById('hp1').style.width=hp+'%';
  document.getElementById('hp2').style.width=ehp+'%';
 
- if(hp<=0||ehp<=0){
-  ctx.fillStyle='#fff';ctx.font='bold 32px sans-serif';
-  ctx.fillText(ehp<=0?'YOU WIN!':'YOU LOSE',70,120);
-  return;
- }
+ if(shake>0){ctx.canvas.style.transform=`translate(${(Math.random()-0.5)*shake}px,${(Math.random()-0.5)*shake}px)`; shake--} else ctx.canvas.style.transform='';
+
+ if(hp<=0||ehp<=0){gameOver=true; document.getElementById('rt').innerText=ehp<=0?'YOU WIN!':'YOU LOSE'; document.getElementById('restart').style.display='flex'; return}
  requestAnimationFrame(loop);
 }
-document.getElementById('L').ontouchstart=()=>keys['l']=1;document.getElementById('L').ontouchend=()=>keys['l']=0;
-document.getElementById('R').ontouchstart=()=>keys['r']=1;document.getElementById('R').ontouchend=()=>keys['r']=0;
-document.getElementById('A').onclick=()=>punch=12;
-document.getElementById('K').onclick=()=>kick=14;
-window.onkeydown=e=>{keys[e.key]=1; if(e.code==='Space') punch=12; if(e.key==='k') kick=14;};
-window.onkeyup=e=>keys[e.key]=0;
+
+let keys={};
+const bind=(id,k,press)=>{let el=document.getElementById(id); let s=e=>{e.preventDefault(); if(press) press(); else keys[k]=1}; let e1=e=>{keys[k]=0; if(k==='b') bT=0}; el.addEventListener('touchstart',s,{passive:false}); el.addEventListener('touchend',e1); el.addEventListener('mousedown',s); el.addEventListener('mouseup',e1);};
+bind('L','l'); bind('R','r');
+bind('P',null,()=>{if(pT==0&&!bT) pT=12});
+bind('K',null,()=>{if(kT==0&&!bT) kT=18});
+bind('U',null,()=>{if(uT==0&&!bT) uT=20});
+bind('B','b',()=>{bT=999}); // hold
+
+window.addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=1; if(e.code==='Space'&&pT==0)pT=12; if(e.key==='k'&&kT==0)kT=18; if(e.key==='u'&&uT==0)uT=20; if(e.shiftKey) bT=999});
+window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=0; if(e.key==='Shift') bT=0});
+
+function reset(){x=80;ex=280;vx=0;evx=0;hp=100;ehp=100;pT=kT=uT=bT=epT=ekT=euT=ebT=0;particles=[];gameOver=false;document.getElementById('restart').style.display='none';loop();}
 loop();
 </script>
 </body>
