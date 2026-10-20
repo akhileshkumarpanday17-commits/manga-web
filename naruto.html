@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>NARUTO - Ultimate Practice</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:system-ui,900}
+body{margin:0;background:radial-gradient(#1c1c2a,#050508);display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;color:#fff;overflow:hidden;touch-action:none}
+.top{width:360px;display:flex;justify-content:space-between;font-size:11px;letter-spacing:1px}
+#bars{width:360px;display:flex;gap:8px;margin:5px 0}
+.bar{flex:1;height:16px;background:#111;border-radius:20px;overflow:hidden;border:1px solid #2a2a2a}
+#hp1,#hp2{height:100%;transition:.15s}
+#hp1{background:linear-gradient(90deg,#4bff8f,#00ff5e)} #hp2{background:linear-gradient(90deg,#ff4b4b,#ff0000)}
+#chakra{width:360px;height:12px;background:#0a0a12;border-radius:10px;border:1px solid #223;display:flex;overflow:hidden}
+#chakraFill{height:100%;width:0%;background:linear-gradient(90deg,#22d3ff,#5f00ff,#ff8c00);box-shadow:0 0 10px #22d3ff;transition:width .18s}
+canvas{background:radial-gradient(ellipse at 50% 0%,#2b2b44 0%,#1a1a25 55%,#13131a 55%,#0d0d10 100%);border:2px solid #2a2a3a;border-radius:18px;box-shadow:0 20px 80px #000}
+#controls{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:360px;margin-top:10px}
+.b{padding:10px 2px;border-radius:12px;border:none;font-weight:900;font-size:10px;box-shadow:0 4px 0 #000;line-height:1.1}
+.b:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+.b:disabled{opacity:.3}
+#mode{width:360px;display:flex;gap:6px;margin-bottom:6px}
+#mode button{flex:1;padding:8px;border-radius:10px;border:none;font-weight:900;font-size:11px}
+.on{background:#fff;color:#000} .off{background:#222;color:#666}
+#restart{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.92);z-index:20;flex-direction:column;gap:12px}
+</style>
+</head>
+<body>
+<div class="top"><span id="modeLabel">FIGHT MODE - SASUKE</span><span id="cText">0%</span></div>
+<div id="bars"><div class="bar"><div id="hp1" style="width:100%"></div></div><div class="bar"><div id="hp2" style="width:100%"></div></div></div>
+<div id="chakra"><div id="chakraFill"></div></div>
+<div id="mode">
+<button id="btnFight" class="on" onclick="setMode('fight')">⚔️ FIGHT</button>
+<button id="btnPractice" class="off" onclick="setMode('practice')">🎯 PRACTICE</button>
+</div>
+<canvas id="c" width="360" height="460"></canvas>
+<div id="controls">
+<button class="b" style="background:#333;color:#fff" id="L">◀ LEFT</button>
+<button class="b" style="background:#fff" id="P">PUNCH<br>J</button>
+<button class="b" style="background:#22f1ff" id="K">KICK<br>K</button>
+<button class="b" style="background:#333;color:#fff" id="R">RIGHT ▶</button>
+<button class="b" style="background:linear-gradient(#ffec00,#ffa600)" id="C">CHARGE ⚡<br>HOLD C</button>
+<button class="b" style="background:linear-gradient(#00e5ff,#0066ff);color:#fff" id="Ras">RASENGAN<br>40%</button>
+<button class="b" style="background:linear-gradient(#ff8c00,#ff0000);color:#fff" id="T9">9-TAILS<br>80%</button>
+<button class="b" style="background:linear-gradient(#ff00ff,#ff0055);color:#fff" id="U">BOMB<br>100%+9T</button>
+</div>
+<div id="restart"><h1 id="rt">YOU WIN</h1><button onclick="reset()" style="padding:14px 28px;border-radius:12px;border:none;font-weight:900">RESTART</button></div>
+
+<script>
+const ctx=document.getElementById('c').getContext('2d');
+let mode='fight', x=100, ex=260, vx=0, evx=0, hp=100, ehp=100, chakra=0;
+let pT=0,kT=0,rasT=0,ultT=0,nine=false,nineTime=0,charge=false;
+let epT=0, particles=[], shake=0, gameOver=false, anim=0, clones=[];
+
+// FULL NARUTO CHARACTER
+function drawNarutoFull(px,py,facing, st, isEnemy){
+ ctx.save(); ctx.translate(px,py); ctx.scale(facing,1);
+ if(st.ko) ctx.rotate(1.1);
+ // chakra aura
+ if(st.nine){
+   ctx.fillStyle=`rgba(255,140,0,${0.15+Math.sin(anim*0.2)*0.07})`;
+   ctx.beginPath(); ctx.ellipse(0,5,34,48,0,0,Math.PI*2); ctx.fill();
+   // 9 tails
+   ctx.strokeStyle='#ff6a00'; ctx.lineWidth=6; ctx.lineCap='round';
+   for(let i=0;i<5;i++){
+     let a=Math.sin(anim*0.12+i)*0.6;
+     ctx.beginPath(); ctx.moveTo(-6+i*3,18);
+     ctx.quadraticCurveTo(-12+i*4+a*10,30, -8+i*5+a*8, 52+Math.sin(anim*0.18+i)*4);
+     ctx.stroke();
+   }
+ }
+
+ // shadow
+ ctx.fillStyle='rgba(0,0,0,.45)'; ctx.beginPath(); ctx.ellipse(0,46,22,7,0,0,Math.PI*2); ctx.fill();
+
+ // legs - black pants + sandal
+ ctx.fillStyle='#111'; ctx.strokeStyle='#111'; ctx.lineWidth=7;
+ ctx.beginPath(); ctx.moveTo(-4,16); ctx.lineTo(-8+(st.k?18:0),30); ctx.lineTo(-10+(st.k?20:0),44); ctx.stroke();
+ ctx.beginPath(); ctx.moveTo(4,16); ctx.lineTo(10,30); ctx.lineTo(12,44); ctx.stroke();
+ ctx.fillStyle='#1a1a1a'; ctx.fillRect(-14,42,10,5); ctx.fillRect(8,42,10,5); // sandals
+
+ // body - orange & black jacket
+ ctx.fillStyle='#ff7b00'; ctx.fillRect(-12, -6, 24, 24);
+ ctx.fillStyle='#000'; ctx.fillRect(-12,-6,5,24); ctx.fillRect(7,-6,5,24); // black sides
+ ctx.fillStyle='#fff'; ctx.fillRect(-12,0,24,2); // zip
+ ctx.strokeStyle='#000'; ctx.lineWidth=2; ctx.strokeRect(-12,-6,24,24);
+
+ // arms
+ ctx.lineWidth=6; ctx.strokeStyle='#ffdbac';
+ let armX = st.p?28: st.ras?22: st.ult?32: 14;
+ if(st.nine) ctx.strokeStyle='#ffb07a';
+ ctx.beginPath(); ctx.moveTo(12,-2); ctx.lineTo(armX, -2+(st.p?-2:0)); ctx.stroke(); // punching arm
+ ctx.beginPath(); ctx.moveTo(-12,-2); ctx.lineTo(-16,8); ctx.stroke(); // guard
+
+ // rasengan
+ if(st.ras){
+   ctx.save(); ctx.translate(armX+12,-4);
+   let grd=ctx.createRadialGradient(0,0,1,0,0,20); grd.addColorStop(0,'#fff'); grd.addColorStop(0.2,'#aaf'); grd.addColorStop(0.5,'#22d3ff'); grd.addColorStop(1,'#0044ff');
+   ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(0,0,18+Math.sin(anim*0.4)*2,0,Math.PI*2); ctx.fill();
+   ctx.strokeStyle='rgba(255,255,255,.8)'; ctx.lineWidth=1.5;
+   for(let i=0;i<4;i++){ctx.beginPath(); ctx.arc(0,0,6+i*4, anim*0.3+i, anim*0.3+i+1.8); ctx.stroke();}
+   ctx.restore();
+ }
+
+ // ultimate bomb
+ if(st.ult){
+   ctx.save(); ctx.translate(armX+16,-10);
+   let g=ctx.createRadialGradient(0,0,2,0,0,30); g.addColorStop(0,'#fff'); g.addColorStop(0.3,'#ff8c00'); g.addColorStop(0.7,'#ff0000'); g.addColorStop(1,'#000');
+   ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,26+Math.random()*4,0,Math.PI*2); ctx.fill();
+   ctx.restore();
+ }
+
+ // head - big
+ ctx.save(); ctx.translate(0,-22);
+ if(st.hit) ctx.translate((Math.random()-0.5)*3,0);
+ // face skin
+ ctx.fillStyle='#ffdbac'; ctx.beginPath(); ctx.arc(0,0,15,0,Math.PI*2); ctx.fill();
+ // hair - spiky yellow
+ ctx.fillStyle='#ffeb00'; 
+ ctx.beginPath(); ctx.moveTo(-15,-8); ctx.lineTo(-12,-18); ctx.lineTo(-6,-15); ctx.lineTo(0,-20); ctx.lineTo(6,-15); ctx.lineTo(12,-18); ctx.lineTo(15,-8); ctx.lineTo(12,-2); ctx.lineTo(-12,-2); ctx.closePath(); ctx.fill();
+ ctx.strokeStyle='#e6c800'; ctx.lineWidth=1.5; ctx.stroke();
+ // headband
+ ctx.fillStyle='#1e3a8a'; ctx.fillRect(-16,-8,32,9);
+ ctx.fillStyle='#c0c0c0'; ctx.fillRect(-6,-10,12,13); ctx.fillStyle='#000'; ctx.font='bold 8px sans-serif'; ctx.fillText('🍃',-4,-1);
+ // eyes
+ ctx.fillStyle='#000'; ctx.beginPath(); ctx.arc(-5,2,2,0,Math.PI*2); ctx.arc(5,2,2,0,Math.PI*2); ctx.fill();
+ if(st.nine){ctx.fillStyle='#ff0000'; ctx.beginPath(); ctx.arc(-5,2,3,0,Math.PI*2); ctx.arc(5,2,3,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#000'; ctx.beginPath(); ctx.moveTo(-5,2); ctx.lineTo(-5,2); ctx.fill(); }
+ // whiskers
+ ctx.strokeStyle='rgba(0,0,0,.5)'; ctx.lineWidth=1; for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(-15,i*2+2);ctx.lineTo(-19,i*2+2);ctx.stroke();ctx.beginPath();ctx.moveTo(15,i*2+2);ctx.lineTo(19,i*2+2);ctx.stroke();}
+ ctx.restore();
+ ctx.restore();
+}
+
+function drawSasuke(px,py,facing,st){
+ ctx.save(); ctx.translate(px,py); ctx.scale(facing,1);
+ if(st.ko) ctx.rotate(1.1);
+ ctx.fillStyle='rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(0,46,20,6,0,0,Math.PI*2); ctx.fill();
+ ctx.strokeStyle='#a0a0ff'; ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(0,16); ctx.lineTo(-8,30); ctx.lineTo(-10,44); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,16); ctx.lineTo(8,30); ctx.lineTo(10,44); ctx.stroke();
+ ctx.fillStyle='#1a1a5a'; ctx.fillRect(-11,-4,22,22); ctx.fillStyle='#fff'; ctx.fillRect(-11,4,22,2);
+ ctx.strokeStyle='#cbd5ff'; ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(10,-2); ctx.lineTo(st.p?28:14,-2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-10,-2); ctx.lineTo(-14,6); ctx.stroke();
+ ctx.save(); ctx.translate(0,-20);
+ ctx.fillStyle='#ffdbac'; ctx.beginPath(); ctx.arc(0,0,13,0,Math.PI*2); ctx.fill();
+ ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(0,-6,14, Math.PI, 0); ctx.fill(); // hair
+ ctx.fillStyle='#000'; ctx.beginPath(); ctx.arc(-4,2,1.8,0,Math.PI*2); ctx.arc(4,2,1.8,0,Math.PI*2); ctx.fill();
+ ctx.restore(); ctx.restore();
+}
+
+function spawn(px,py,col,n,p=1){for(let i=0;i<n;i++) particles.push({x:px,y:py,vx:(Math.random()-0.5)*12*p,vy:(Math.random()-1)*10*p,life:1,dec:0.03+Math.random()*0.04,col})}
+
+function setMode(m){
+ mode=m;
+ document.getElementById('btnFight').className=m=='fight'?'on':'off';
+ document.getElementById('btnPractice').className=m=='practice'?'on':'off';
+ document.getElementById('modeLabel').innerText=m=='practice'?'PRACTICE MODE - NO ENEMY':'FIGHT MODE - SASUKE';
+ ehp=100; document.getElementById('hp2').style.width='100%';
+}
+
+function loop(){
+ if(gameOver) return; anim++; ctx.clearRect(0,0,360,480);
+ ctx.fillStyle='rgba(255,255,255,.02)'; for(let i=0;i<360;i+=24) ctx.fillRect(i,380,1,80);
+
+ if(keys.l) vx-= nine?1.5:0.9; if(keys.r) vx+= nine?1.5:0.9;
+ vx*=0.84; x+=vx; x=Math.max(35,Math.min(325,x));
+
+ if(mode=='fight'){
+   let dist=x-ex; evx+= dist>0?0.28:-0.28; evx*=0.86; ex+=evx; ex=Math.max(35,Math.min(325,ex));
+   if(Math.random()<0.05 && epT==0) epT=12;
+ } else { ex=500 } // hide enemy
+
+ if(charge && chakra<100){chakra+= nine?1.1:0.55; if(Math.random()<0.35) spawn(x,360,'#22d3ff',2,0.4)}
+
+ let d=Math.abs(x-ex);
+ if(mode=='fight' && d<72){
+   if(pT==6){ehp-= nine?12:6; evx+=(x<ex?-5:5); spawn(ex,300,'#fff',8)}
+   if(kT==8){ehp-= nine?16:9; evx+=(x<ex?-7:7); spawn(ex,305,'#22f1ff',10)}
+   if(rasT==10){ehp-=32; evx+=(x<ex?-13:13); shake=20; spawn(ex,295,'#0066ff',24,1.8)}
+   if(ultT==12){ehp-=60; evx+=(x<ex?-22:22); shake=28; spawn(ex,295,'#ff8c00',45,2.4)}
+   if(epT==6){hp-=7; spawn(x,300,'#a0a0ff',8); vx+=(x<ex?5:-5)}
+ }
+ if(pT>0)pT--; if(kT>0)kT--; if(rasT>0)rasT--; if(ultT>0)ultT--; if(epT>0)epT--;
+ if(nine){nineTime--; if(nineTime<=0){nine=false; chakra=15}}
+
+ // clones visual in practice
+ if(mode=='practice' && clones.length<3 && Math.random()<0.02) clones.push({x:x+(Math.random()-0.5)*40, life:60})
+
+ drawNarutoFull(x,320, (mode=='fight'&&ex>x)?1:-1, {p:pT>0,k:kT>0,ras:rasT>0,ult:ultT>0,nine,hit:false,ko:hp<=0}, false);
+ if(mode=='fight') drawSasuke(ex,320, x>ex?1:-1, {p:epT>0,ko:ehp<=0});
+
+ // draw training dummy in practice
+ if(mode=='practice'){
+   ctx.strokeStyle='#444'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(260,200); ctx.lineTo(260,360); ctx.stroke();
+   ctx.fillStyle='#333'; ctx.beginPath(); ctx.arc(260,190,22,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#555'; ctx.stroke();
+   ctx.fillStyle='#fff'; ctx.font='10px sans-serif'; ctx.fillText('DUMMY',238,380);
+   if(d<72 && (pT==6||kT==8||rasT==10||ultT==12)){spawn(260,280,'#fff',10); if(rasT==10) shake=10}
+ }
+
+ particles=particles.filter(p=>p.life>0);
+ particles.forEach(p=>{p.x+=p.vx;p.vy+=0.4;p.y+=p.vy;p.life-=p.dec;ctx.globalAlpha=p.life;ctx.fillStyle=p.col;ctx.beginPath();ctx.arc(p.x,p.y,2.8,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;
+
+ document.getElementById('hp1').style.width=hp+'%'; document.getElementById('hp2').style.width=(mode=='practice'?100:ehp)+'%';
+ document.getElementById('chakraFill').style.width=chakra+'%'; document.getElementById('cText').innerText=Math.floor(chakra)+'%'+(nine?' - 9TAILS':'');
+ if(shake>0){ctx.canvas.style.transform=`translate(${(Math.random()-0.5)*shake}px,${(Math.random()-0.5)*shake}px)`;shake--}else ctx.canvas.style.transform='';
+
+ document.getElementById('Ras').disabled=chakra<40; document.getElementById('T9').disabled=chakra<80||nine; document.getElementById('U').disabled=!(nine&&chakra>=95);
+
+ if(mode=='fight' && (hp<=0||ehp<=0)){gameOver=true; document.getElementById('rt').innerText=ehp<=0?'YOU WIN! DATTEBAYO':'YOU LOSE'; document.getElementById('restart').style.display='flex'; return}
+ requestAnimationFrame(loop);
+}
+
+let keys={};
+const bind=(id,k)=>{let el=document.getElementById(id); el.addEventListener('touchstart',e=>{e.preventDefault();keys[k]=1}); el.addEventListener('touchend',()=>keys[k]=0); el.addEventListener('mousedown',()=>keys[k]=1); el.addEventListener('mouseup',()=>keys[k]=0);};
+bind('L','l'); bind('R','r');
+document.getElementById('P').addEventListener('touchstart',e=>{e.preventDefault(); if(pT==0)pT=12});
+document.getElementById('K').addEventListener('touchstart',e=>{e.preventDefault(); if(kT==0)kT=16});
+document.getElementById('C').addEventListener('touchstart',e=>{e.preventDefault();charge=true}); document.getElementById('C').addEventListener('touchend',()=>charge=false);
+document.getElementById('C').addEventListener('mousedown',()=>charge=true); window.addEventListener('mouseup',()=>charge=false);
+document.getElementById('Ras').addEventListener('click',()=>{if(chakra>=40){chakra-=40; rasT=20;}});
+document.getElementById('T9').addEventListener('click',()=>{if(chakra>=80){chakra-=80; nine=true; nineTime=700; spawn(x,300,'#ff8c00',28,1.4); shake=14}});
+document.getElementById('U').addEventListener('click',()=>{if(nine&&chakra>=95){chakra=0; ultT=24; shake=22}});
+
+window.addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=1; if(e.key===' ') charge=true; if(e.key.toLowerCase()==='j'&&pT==0)pT=12; if(e.key.toLowerCase()==='k'&&kT==0)kT=16; if(e.key.toLowerCase()==='c') charge=true;});
+window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=0; if(e.key===' '||e.key.toLowerCase()==='c') charge=false;});
+
+function reset(){x=100;ex=260;vx=0;evx=0;hp=100;ehp=100;chakra=0;pT=kT=rasT=ultT=epT=0;nine=false;particles=[];gameOver=false;document.getElementById('restart').style.display='none';loop();}
+loop();
+</script>
+</body>
+</html>
